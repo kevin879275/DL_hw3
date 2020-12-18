@@ -30,9 +30,9 @@ class ReLU():
     def forward(self, input):
         return np.maximum(input, 0)
 
-    def backward(self, input, grad_output):
+    def backward(self, input, grad_input):
         relu_grad = input > 0
-        return grad_output*relu_grad
+        return grad_input*relu_grad
 
 
 class Conv2d():
@@ -77,7 +77,7 @@ class Conv2d():
         print("output : \n", output)
         return output
 
-    def backward(self):
+    def backward(self, input, grad_input):
 
         pass
 

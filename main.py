@@ -47,8 +47,9 @@ class DataLoader():
                 path = root + '/' + dir
                 for file in os.listdir(path):
                     img_path = path + '/' + file
-                    im = Image.open(img_path)
-                    imgs_label.append([np.array(im), classes[dir]])
+                    im = Image.open(img_path).convert("RGB")
+                    imgs_label.append(
+                        [np.transpose(np.array(im) / 255, (2, 0, 1)), classes[dir]])
             self.test_data = imgs_label
 
     def get_train_batch(self, batch_size=BATCH_SIZE):
@@ -96,18 +97,46 @@ def main():
     Test_dataLoader = DataLoader(root=Test_root, Is_Train=False)
     Model = model.Model()
     print("training start\n")
+    train_loss_list = []
+    val_loss_list = []
     for epoch in range(Epoch):
         print("epoch", epoch+1, "/", Epoch)
         batch = 0
-        loss = 0
+        train_loss = 0
+        valid_loss = 0
         for train_imgs, train_label in Train_dataLoader.get_train_batch(batch_size=BATCH_SIZE):
+            batch = batch + 1
             activations = Model.forward(train_imgs)
             logits = activations[-1]
             softmax = Softmax(logits)
-            loss_val += Cross_Entropy(train_label, softmax)
+            train_loss += Cross_Entropy(train_label, softmax)
             loss_grad = Grad_Cross_Entropy(train_label, logits)
             Model.backward(loss_grad, activations)
-        pass
+        batch = 0
+        for valid_imgs, valid_label in Train_dataLoader.get_valid_batch(batch_size=BATCH_SIZE):
+            batch = batch + 1
+            activations = Model.forward(valid_imgs)
+            logits = activations[-1]
+            softmax = Softmax(logits)
+            valid_loss += Cross_Entropy(valid_label, softmax)
+        train_loss_list.append(train_loss / batch)
+        val_loss_list.append(valid_loss / batch)
+        print("Train_loss = ",
+              train_loss_list[-1], " , Validation loss = ", val_loss_list[-1])
+
+    print("testing start\n")
+    test_loss = 0
+    test_acc = 0
+    for test_imgs, test_label in Test_dataLoader.get_test_batch(batch_size=BATCH_SIZE):
+        batch = batch + 1
+        activations = Model.forward(test_imgs)
+        logits = activations[-1]
+        softmax = Softmax(logits)
+        test_loss += Cross_Entropy(test_label, softmax)
+        test_acc == np.mean(logits.argmax(axis=-1) == test_label)
+
+    print("test loss = ", test_loss / batch,
+          " ,  test acc = ", test_acc / batch)
 
 
 if __name__ == "__main__":
