@@ -19,6 +19,7 @@ if padding > 0:
                                        (padding, padding)), mode='constant', constant_values=0)
 weights = np.random.randint(
     4, size=(out_channels, in_channels, kernel_size[0], kernel_size[1]))
+biases = np.random.randint(10, size=out_channels)
 
 output_shape_H = int(
     ((img_H - kernel_size[0] + 2*padding) / strides) + 1)
@@ -35,6 +36,7 @@ for channel in range(out_channels):
             dot = np.multiply(img[:, :, H * strides: H*strides + kernel_size[0],
                                   W*strides:W*strides+kernel_size[1]], weights[channel])
             s = np.sum(dot, axis=(1, 2, 3))
+            s = s + biases[channel]
             output[:, channel, H, W] = s
 
 

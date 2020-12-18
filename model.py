@@ -6,12 +6,12 @@ class FC():
         self.input = input
         self.output = output
         self.lr = lr
-        self.weights = np.random.normal(loc=0.0, scale=np.sqrt(2/self.input + self.output),
-                                        size=(self.input, self.output))
+        self.weight = np.random.normal(loc=0.0, scale=np.sqrt(2/self.input + self.output),
+                                       size=(self.input, self.output))
         self.biases = np.zeros(output)
 
     def forward(self, input):
-        return np.dot(input, self.weights) + self.biases
+        return np.dot(input, self.weight) + self.biases
 
     def backward(self, input, grad_input):
         grad_output = np.dot(grad_input, (self.weight).T)
@@ -43,32 +43,50 @@ class Conv2d():
         self.strides = strides
         self.padding = padding
         self.weights = self.weights = np.random.normal(loc=0.0, scale=np.sqrt(2/self.in_channels + self.out_channels),
-                                                       size=(self.out_channels, self.in_channels, kernel_size[0], kernel_size[1]))
-        #self.biases = np.zeros(out_channels, in_channels)
-        pass
+                                                       size=(out_channels, in_channels, kernel_size[0], kernel_size[1]))
+        self.biases = np.zeros(out_channels)
 
     def forward(self, input):
-        output_shape_x = int(
-            ((input.shape[1] - self.kernel_size[0] + 2*self.padding) / self.strides) + 1)
-        output_shape_y = int(
-            ((input.shape[2] - self.kernel_size[1] + 2*self.padding) / self.strides) + 1)
+        print("original_img = \n", input)
+        img_H = input.shape[2]
+        img_W = input.shape[3]
 
-        output = np.zeros((input.shape[0], output_shape_x, output_shape_y))
-        pass
-        # for y in range(output_shape_y):
-        #     for x in range(output_shape_x):
+        if self.padding > 0:
+            input_padding = np.pad(array=input, pad_width=(
+                (0, 0), (0, 0), (self.padding, self.padding), (self.padding, self.padding)), mode='constant', constant_values=0)
 
-        #         output[input.shape[0], x, y] = np.sum(np.dot())
+        output_shape_H = int(
+            ((img_H - self.kernel_size[0] + 2*self.padding) / self.strides) + 1)
+        output_shape_W = int(
+            ((img_W - self.kernel_size[1] + 2*self.padding) / self.strides) + 1)
+        output = np.zeros(
+            (input.shape[0], self.out_channels, output_shape_H, output_shape_W))
+
+        print("padding_img = \n", input_padding)
+        print("weights = \n", self.weights)
+
+        for channel in range(self.out_channels):
+            for H in range(output_shape_H):
+                for W in range(output_shape_W):
+                    dot = np.multiply(input_padding[:, :, H * self.strides: H*self.strides + self.kernel_size[0],
+                                                    W*self.strides:W*self.strides+self.kernel_size[1]], self.weights[channel])
+                    s = np.sum(dot, axis=(1, 2, 3))
+                    s = s + self.biases[channel]
+                    output[:, channel, H, W] = s
+
+        print("output : \n", output)
+        return output
 
     def backward(self):
+
         pass
 
 
 class Model():
     def __init__(self):
         model = []
-        model.append(Conv2d(in_channels=3, out_channels=16,
-                            kernel_size=(1, 1), strides=1, padding=0))
+        model.append(Conv2d(in_channels=3, out_channels=2,
+                            kernel_size=(3, 3), strides=1, padding=1))
         self.model = model
 
     def forward(self, input):
