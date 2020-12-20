@@ -36,12 +36,13 @@ class ReLU():
 
 
 class Conv2d():
-    def __init__(self, in_channels, out_channels, kernel_size, strides=1, padding=1):
+    def __init__(self, in_channels, out_channels, kernel_size, strides=1, padding=1, lr=0.1):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
         self.strides = strides
         self.padding = padding
+        self.lr = lr
         self.weights = self.weights = np.random.normal(loc=0.0, scale=np.sqrt(2/self.in_channels + self.out_channels),
                                                        size=(out_channels, in_channels, kernel_size[0], kernel_size[1]))
         self.biases = np.zeros(out_channels)
@@ -78,8 +79,14 @@ class Conv2d():
         return output
 
     def backward(self, input, grad_input):
-
-        pass
+        input_padding = np.pad(array=input, pad_width=(
+            (0, 0), (0, 0), (self.padding, self.padding), (self.padding, self.padding)), mode='constant', constant_values=0)
+        grad_output = np.dot(grad_input, (self.weights).T)
+        grad_weights = 0
+        grad_biases = 0
+        self.weights = self.weights - self.lr*grad_weights
+        self.biases = self.biases - self.lr*grad_biases
+        return grad_output
 
 
 class Model():
