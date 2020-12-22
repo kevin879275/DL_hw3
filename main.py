@@ -5,8 +5,8 @@ from PIL import Image
 import random
 import model
 
-Epoch = 10
-BATCH_SIZE = 2
+Epoch = 60
+BATCH_SIZE = 32
 lr = 0.01
 Train_root = "./Data/Data_train"
 Test_root = "./Data/Data_test"
@@ -80,7 +80,7 @@ def Cross_Entropy(y, y_predict):
     reference[np.arange(y_predict.shape[0]), y] = 1
     mul = np.multiply(reference, np.log(y_predict))
     Sum = np.sum(mul)
-    loss = - (1 / BATCH_SIZE) * Sum
+    loss = - (1 / y.shape[0]) * Sum
     return loss
 
 
@@ -127,13 +127,14 @@ def main():
     print("testing start\n")
     test_loss = 0
     test_acc = 0
-    for test_imgs, test_label in Test_dataLoader.get_test_batch(batch_size=BATCH_SIZE):
+    batch = 0
+    for test_imgs, test_label in Test_dataLoader.get_test_batch(batch_size=1470):
         batch = batch + 1
         activations = Model.forward(test_imgs)
         logits = activations[-1]
         softmax = Softmax(logits)
         test_loss += Cross_Entropy(test_label, softmax)
-        test_acc == np.mean(logits.argmax(axis=-1) == test_label)
+        test_acc += np.mean(logits.argmax(axis=-1) == test_label)
 
     print("test loss = ", test_loss / batch,
           " ,  test acc = ", test_acc / batch)

@@ -6,7 +6,7 @@ class FC():
         self.input = input
         self.output = output
         self.lr = lr
-        self.weight = np.random.normal(loc=0.0, scale=np.sqrt(2/self.input + self.output),
+        self.weight = np.random.normal(loc=0.0, scale=1,
                                        size=(self.input, self.output))
         self.biases = np.zeros(output)
 
@@ -75,7 +75,7 @@ class Conv2d():
                     s = s + self.biases[channel]
                     output[:, channel, H, W] = s
 
-        print("output shape: \n", output.shape)
+        #print("output shape: \n", output.shape)
         return output
 
     def backward(self, input, grad_input):
@@ -89,13 +89,12 @@ class Conv2d():
         compute dL/dx
         '''
         grad_output = np.zeros(input.shape)
-        for channel in range(self.out_channels):
-            for H in range(grad_input_padding.shape[2]):
-                for W in range(grad_input_padding.shape[3]):
+        for channel in range(self.in_channels):
+            for H in range(grad_output.shape[2]):
+                for W in range(grad_output.shape[3]):
                     dot = np.multiply(grad_input_padding[:, :, H * self.strides: H*self.strides + self.kernel_size[0],
-                                                         W*self.strides:W*self.strides+self.kernel_size[1]], inverse_weights[channel])
+                                                         W*self.strides:W*self.strides+self.kernel_size[1]], inverse_weights[:, channel, :, :])
                     s = np.sum(dot, axis=(1, 2, 3))
-                    #s = s + self.biases[channel]
                     grad_output[:, channel, H, W] = s
 
         '''
@@ -106,8 +105,8 @@ class Conv2d():
         for out_channel in range(grad_weights.shape[0]):
             for H in range(grad_weights.shape[2]):
                 for W in range(grad_weights.shape[3]):
-                    x = input_padding[:, :, H*self.strides:H * self.strides+self.kernel_size[0],
-                                      W*self.strides:W*self.strides+self.kernel_size[1]]
+                    x = input_padding[:, :, H*self.strides: H * self.strides+self.kernel_size[0],
+                                      W*self.strides: W*self.strides+self.kernel_size[1]]
                     y = grad_input[:, out_channel, H, W]
                     for i in range(x.shape[0]):
                         grad_weights[out_channel, :, :, :] += x[i]*y[i]
@@ -133,11 +132,13 @@ class Flatten():
 class Model():
     def __init__(self):
         model = []
-        model.append(Conv2d(in_channels=3, out_channels=2,
-                            kernel_size=(3, 3), strides=1, padding=1))
-        model.append(ReLU())
+        # model.append(Conv2d(in_channels=3, out_channels=2,
+        #                     kernel_size=(3, 3), strides=1, padding=1))
+        # model.append(ReLU())
         model.append(Flatten())
-        model.append(FC(2048, 3))
+        model.append(FC(3072, 64))
+        model.append(ReLU())
+        model.append(FC(64, 3))
         self.model = model
 
     def forward(self, input):
@@ -149,7 +150,7 @@ class Model():
         return activations
 
     def backward(self, loss_grad, layer_inputs):
-        for layer_index in range(len(self.model))[::-1]:
+        for layer_index in range(len(self.model))[:: -1]:
             loss_grad = self.model[layer_index].backward(
                 layer_inputs[layer_index], loss_grad)
 

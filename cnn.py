@@ -12,7 +12,7 @@ img_W = 5
 kernel_size = (3, 3)
 
 img = np.random.randint(4, size=(BATCH_SIZE, in_channels, img_H, img_W))
-
+grad_output = np.zeros(img.shape)
 print("img = \n", img)
 if padding > 0:
     img = np.pad(array=img, pad_width=((0, 0), (0, 0), (padding, padding),
@@ -29,6 +29,9 @@ grad_input_shape_W = int(
     ((img_W - kernel_size[1] + 2*padding) / strides) + 1)
 grad_input = np.random.randint(
     5, size=(BATCH_SIZE, out_channels, grad_input_shape_H, grad_input_shape_W))
+if padding > 0:
+    grad_input_padding = np.pad(array=grad_input, pad_width=((0, 0), (0, 0), (padding, padding),
+                                                             (padding, padding)), mode='constant', constant_values=0)
 
 print("padding_img = \n", img)
 print("grad_inputs = \n", grad_input)
@@ -47,7 +50,12 @@ grad_biases = np.mean(grad_input, axis=0)
 
 grad_weights = grad_weights / BATCH_SIZE
 
-weights_inverse = np.rot90(weights, axis=(2, 3))
+weights_inverse = np.rot90(weights, axes=(2, 3))
 
 
+for in_channel in range(in_channels):
+    for H in range(grad_output.shape[2]):
+        for W in range(grad_output.shape[3]):
+
+            # dot = np.multiply(grad_input[:, channel,H*strides:H*strides+kernel_size[0],W*strides:W*strides + kernel_size[1]],weights_inverse[out_channels,])
 print("grad_weights : \n", grad_weights)
