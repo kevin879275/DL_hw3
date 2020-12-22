@@ -6,8 +6,10 @@ class FC():
         self.input = input
         self.output = output
         self.lr = lr
-        self.weight = np.random.normal(loc=0.0, scale=1,
+        self.weight = np.random.normal(loc=0.0, scale=np.sqrt(2/(input+output)),
                                        size=(self.input, self.output))
+        # self.weight = np.random.normal(loc=0.0, scale=1,
+        #                                size=(self.input, self.output))
         self.biases = np.zeros(output)
 
     def forward(self, input):
@@ -36,15 +38,17 @@ class ReLU():
 
 
 class Conv2d():
-    def __init__(self, in_channels, out_channels, kernel_size, strides=1, padding=1, lr=0.1):
+    def __init__(self, in_channels, out_channels, kernel_size, strides=1, padding=1, lr=0.01):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
         self.strides = strides
         self.padding = padding
         self.lr = lr
-        self.weights = self.weights = np.random.normal(loc=0.0, scale=1,
-                                                       size=(out_channels, in_channels, kernel_size[0], kernel_size[1]))
+        # self.weights = self.weights = np.random.normal(loc=0.0, scale=1,
+        #                                                size=(out_channels, in_channels, kernel_size[0], kernel_size[1]))
+        self.weights = self.weights = np.random.randn(
+            out_channels, in_channels, kernel_size[0], kernel_size[1]) / (kernel_size[0] * kernel_size[1])
         self.biases = np.zeros(out_channels)
 
     def forward(self, input):
@@ -130,15 +134,18 @@ class Flatten():
 
 
 class Model():
-    def __init__(self):
+    def __init__(self, lr=0.01):
         model = []
-        # model.append(Conv2d(in_channels=3, out_channels=2,
-        #                     kernel_size=(3, 3), strides=1, padding=1))
-        # model.append(ReLU())
-        model.append(Flatten())
-        model.append(FC(3072, 64))
+        model.append(Conv2d(in_channels=3, out_channels=6,
+                            kernel_size=(3, 3), strides=1, padding=1, lr=lr))
         model.append(ReLU())
-        model.append(FC(64, 3))
+        model.append(Conv2d(in_channels=6, out_channels=2,
+                            kernel_size=(4, 4), strides=1, padding=1, lr=lr))
+        model.append(ReLU())
+        model.append(Flatten())
+        model.append(FC(1922, 128, lr=lr))
+        model.append(ReLU())
+        model.append(FC(128, 3, lr=lr))
         self.model = model
 
     def forward(self, input):
