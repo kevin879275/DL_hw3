@@ -17,27 +17,37 @@ print("img = \n", img)
 if padding > 0:
     img = np.pad(array=img, pad_width=((0, 0), (0, 0), (padding, padding),
                                        (padding, padding)), mode='constant', constant_values=0)
-weights = np.random.randint(
-    4, size=(out_channels, in_channels, kernel_size[0], kernel_size[1]))
+weights = np.random.randint(4,
+                            size=(out_channels, in_channels, kernel_size[0], kernel_size[1]))
+grad_weights = np.zeros((out_channels, in_channels,
+                         kernel_size[0], kernel_size[1]))
 biases = np.random.randint(10, size=out_channels)
 
-output_shape_H = int(
+grad_input_shape_H = int(
     ((img_H - kernel_size[0] + 2*padding) / strides) + 1)
-output_shape_W = int(
+grad_input_shape_W = int(
     ((img_W - kernel_size[1] + 2*padding) / strides) + 1)
-output = np.zeros((BATCH_SIZE, out_channels, output_shape_H, output_shape_W))
+grad_input = np.random.randint(
+    5, size=(BATCH_SIZE, out_channels, grad_input_shape_H, grad_input_shape_W))
 
 print("padding_img = \n", img)
-print("weights = \n", weights)
+print("grad_inputs = \n", grad_input)
 
-for channel in range(out_channels):
-    for H in range(output_shape_H):
-        for W in range(output_shape_W):
-            dot = np.multiply(img[:, :, H * strides: H*strides + kernel_size[0],
-                                  W*strides:W*strides+kernel_size[1]], weights[channel])
-            s = np.sum(dot, axis=(1, 2, 3))
-            s = s + biases[channel]
-            output[:, channel, H, W] = s
+for out_channel in range(grad_weights.shape[0]):
+    for H in range(grad_weights.shape[2]):
+        for W in range(grad_weights.shape[3]):
+            x = img[:, :, H*strides:H * strides+kernel_size[0],
+                    W*strides:W*strides+kernel_size[1]]
+            y = grad_input[:, out_channel, H, W]
+            for i in range(x.shape[0]):
+                grad_weights[out_channel, :, :, :] += x[i]*y[i]
+            # grad_weights[:, channel, :, :] += *
+
+grad_biases = np.mean(grad_input, axis=0)
+
+grad_weights = grad_weights / BATCH_SIZE
+
+weights_inverse = np.rot90(weights, axis=(2, 3))
 
 
-print("output : \n", output)
+print("grad_weights : \n", grad_weights)
