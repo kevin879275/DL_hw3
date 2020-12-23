@@ -83,16 +83,25 @@ class Conv2d():
         return output
 
     def backward(self, input, grad_input):
+        input_H = input.shape[2] + 2*self.padding
+        input_W = input.shape[3] + 2*self.padding
+        grad_padding_H = (
+            input_H - 1)*self.strides + self.kernel_size[0] - 2 * self.padding
+        grad_padding_W = (
+            input_W - 1)*self.strides + self.kernel_size[1] - 2 * self.padding
+        grad_input_padding_size = int(
+            (grad_padding_H - grad_input.shape[2]) / 2)
         if self.padding > 0:
             grad_input_padding = np.pad(array=grad_input, pad_width=(
-                (0, 0), (0, 0), (self.padding, self.padding), (self.padding, self.padding)), mode='constant', constant_values=0)
+                (0, 0), (0, 0), (grad_input_padding_size + self.padding, grad_input_padding_size + self.padding), (grad_input_padding_size+self.padding, grad_input_padding_size+self.padding)), mode='constant', constant_values=0)
             input_padding = np.pad(array=input, pad_width=(
                 (0, 0), (0, 0), (self.padding, self.padding), (self.padding, self.padding)), mode='constant', constant_values=0)
+        grad_output = np.zeros(input_padding.shape)
         inverse_weights = np.rot90(self.weights, k=2, axes=(2, 3))
         '''
         compute dL/dx
         '''
-        grad_output = np.zeros(input.shape)
+        #grad_output = np.zeros(input.shape)
         for channel in range(self.in_channels):
             for H in range(grad_output.shape[2]):
                 for W in range(grad_output.shape[3]):
@@ -119,7 +128,7 @@ class Conv2d():
         grad_biases = np.sum(grad_biases, axis=(1, 2))
         self.weights = self.weights - self.lr*grad_weights
         self.biases = self.biases - self.lr*grad_biases
-        return grad_output
+        return grad_output[:, :, self.padding:-self.padding, self.padding:-self.padding]
 
 
 class Flatten():
@@ -136,16 +145,16 @@ class Flatten():
 class Model():
     def __init__(self, lr=0.01):
         model = []
-        model.append(Conv2d(in_channels=3, out_channels=6,
+        model.append(Conv2d(in_channels=3, out_channels=8,
                             kernel_size=(3, 3), strides=1, padding=1, lr=lr))
         model.append(ReLU())
-        model.append(Conv2d(in_channels=6, out_channels=2,
-                            kernel_size=(4, 4), strides=1, padding=1, lr=lr))
+        model.append(Conv2d(in_channels=8, out_channels=3,
+                            kernel_size=(2, 2), strides=1, padding=1, lr=lr))
         model.append(ReLU())
         model.append(Flatten())
-        model.append(FC(1922, 128, lr=lr))
+        model.append(FC(3267, 256, lr=lr))
         model.append(ReLU())
-        model.append(FC(128, 3, lr=lr))
+        model.append(FC(256, 3, lr=lr))
         self.model = model
 
     def forward(self, input):

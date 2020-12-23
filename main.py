@@ -6,7 +6,7 @@ import random
 import model
 
 Epoch = 40
-BATCH_SIZE = 64
+BATCH_SIZE = 32
 lr = 0.01
 Train_root = "./Data/Data_train"
 Test_root = "./Data/Data_test"

@@ -56,6 +56,6 @@ weights_inverse = np.rot90(weights, axes=(2, 3))
 for in_channel in range(in_channels):
     for H in range(grad_output.shape[2]):
         for W in range(grad_output.shape[3]):
-
+            break
             # dot = np.multiply(grad_input[:, channel,H*strides:H*strides+kernel_size[0],W*strides:W*strides + kernel_size[1]],weights_inverse[out_channels,])
 print("grad_weights : \n", grad_weights)
